@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChurnWise AI | Customer Churn Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <main class="container">
+        <header class="header">
+            <div class="brand-icon">✦</div>
+            <div>
+                <p class="eyebrow">AI CUSTOMER INTELLIGENCE</p>
+                <h1>ChurnWise <span>AI</span></h1>
+                <p class="subtitle">Understand churn. Protect relationships.</p>
+            </div>
+        </header>
+
+        <section class="stats-grid">
+            <article class="stat-card">
+                <p>Total Customers</p>
+                <h2>{{ stats.total_customers }}</h2>
+            </article>
+            <article class="stat-card">
+                <p>Churned Customers</p>
+                <h2>{{ stats.churned_customers }}</h2>
+            </article>
+            <article class="stat-card">
+                <p>Dataset Churn Rate</p>
+                <h2>{{ stats.churn_rate }}%</h2>
+            </article>
+        </section>
+
+        {% if error %}
+            <div class="error-message">{{ error }}</div>
+        {% endif %}
+
+        <section class="workspace">
+            <div class="panel">
+                <p class="eyebrow">CUSTOMER PROFILE</p>
+                <h2>Predict Churn Risk</h2>
+                <p class="description">Enter the customer's service details below.</p>
+
+                <form method="POST">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="tenure">Tenure (months)</label>
+                            <input id="tenure" name="tenure" type="number"
+                                   min="0" max="100" value="{{ request.form.get('tenure', '12') }}" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="MonthlyCharges">Monthly Charges ($)</label>
+                            <input id="MonthlyCharges" name="MonthlyCharges"
+                                   type="number" min="0" step="0.01"
+                                   value="{{ request.form.get('MonthlyCharges', '70') }}" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="TotalCharges">Total Charges ($)</label>
+                            <input id="TotalCharges" name="TotalCharges"
+                                   type="number" min="0" step="0.01"
+                                   value="{{ request.form.get('TotalCharges', '840') }}" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="Contract">Contract</label>
+                            <select id="Contract" name="Contract" required>
+                                {% for option in ['Month-to-month', 'One year', 'Two year'] %}
+                                <option value="{{ option }}"
+                                    {% if request.form.get('Contract', 'Month-to-month') == option %}selected{% endif %}>
+                                    {{ option }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="InternetService">Internet Service</label>
+                            <select id="InternetService" name="InternetService" required>
+                                {% for option in ['DSL', 'Fiber optic', 'No'] %}
+                                <option value="{{ option }}"
+                                    {% if request.form.get('InternetService', 'Fiber optic') == option %}selected{% endif %}>
+                                    {{ option }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="PaymentMethod">Payment Method</label>
+                            <select id="PaymentMethod" name="PaymentMethod" required>
+                                {% for option in ['Electronic check', 'Mailed check', 'Bank transfer (automatic)', 'Credit card (automatic)'] %}
+                                <option value="{{ option }}"
+                                    {% if request.form.get('PaymentMethod', 'Electronic check') == option %}selected{% endif %}>
+                                    {{ option }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="OnlineSecurity">Online Security</label>
+                            <select id="OnlineSecurity" name="OnlineSecurity" required>
+                                {% for option in ['Yes', 'No', 'No internet service'] %}
+                                <option value="{{ option }}"
+                                    {% if request.form.get('OnlineSecurity', 'No') == option %}selected{% endif %}>
+                                    {{ option }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="TechSupport">Tech Support</label>
+                            <select id="TechSupport" name="TechSupport" required>
+                                {% for option in ['Yes', 'No', 'No internet service'] %}
+                                <option value="{{ option }}"
+                                    {% if request.form.get('TechSupport', 'No') == option %}selected{% endif %}>
+                                    {{ option }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <button class="predict-button" type="submit">Predict Churn Risk →</button>
+                </form>
+            </div>
+
+            <div class="panel result-panel">
+                <p class="eyebrow">PREDICTION RESULTS</p>
+                <h2>Customer Risk Overview</h2>
+
+                {% if risk is not none %}
+                    <div class="risk-circle">
+                        <strong>{{ risk }}%</strong>
+                        <span>Estimated Risk</span>
+                    </div>
+
+                    <div class="risk-track">
+                        <div class="risk-fill" style="width: {{ risk }}%;"></div>
+                    </div>
+
+                    <p class="risk-label">
+                        {% if risk >= 60 %}
+                            High Risk
+                        {% elif risk >= 35 %}
+                            Moderate Risk
+                        {% else %}
+                            Low Risk
+                        {% endif %}
+                    </p>
+
+                    <div class="advice-card">
+                        <h3>Recommended Action</h3>
+                        <p>{{ advice }}</p>
+                    </div>
+
+                    <div class="factors-card">
+                        <h3>↗ Risk Increase Factors</h3>
+                        <p class="description">
+                            These are possible warning signs, not proof that a factor caused the prediction.
+                        </p>
+                        <ul class="factor-list">
+                            {% for factor in risk_factors %}
+                            <li>
+                                <strong>{{ factor.title }}</strong>
+                                <p>{{ factor.description }}</p>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">✧</div>
+                        <h3>Your results will appear here</h3>
+                        <p>Fill in the customer profile and select “Predict Churn Risk”.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <footer>
+            ChurnWise AI · Predictions are estimates, not guarantees.
+        </footer>
+    </main>
+</body>
+</html>
